@@ -1,0 +1,18 @@
+auto lan0
+iface lan0 inet static
+        address 192.168.194.10
+        netmask 255.255.255.0
+        network 192.168.194.1
+        bridge_stp off
+        bridge_fd 0
+        bridge_maxwait 0
+        pre-up ip link set eth1 down
+        pre-up brctl addbr lan0
+        pre-up brctl addif lan0 eth1
+        pre-up ip addr flush dev eth1
+        pre-up ip link set dev lan0 up
+        pre-up ip link set eth1 up
+        post-down ip link set eth1 down
+        post-down ip link set lan0 down
+        post-down brctl delif lan0 eth1
+        post-down brctl delbr lan0
