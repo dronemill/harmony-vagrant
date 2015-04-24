@@ -1,4 +1,6 @@
-#!/bin/bash -e
+#!/bin/bash
+
+set -e
 
 # suppress stdout
 # exec 1>/dev/null
@@ -36,3 +38,17 @@ ln -sf /usr/bin/docker /usr/local/bin/docker
 echo 'DOCKER_OPTS="--dns 8.8.8.8 --dns 8.8.4.4 --storage-driver=aufs"' >> /etc/default/docker
 service docker restart
 
+
+#
+# MySQL
+#
+docker create --name harmony-data-container-mysql -v /var/lib/mysql busybox
+docker run -d --name harmony-mysql -e MYSQL_DATABASE=harmony -e MYSQL_ROOT_PASSWORD=my-secret-pw --volumes-from=harmony-data-container-mysql mysql:5.6.24
+
+#
+# API
+#
+cd /repos/api
+docker build -t harmony/api:dev-local .
+docker run -d --name harmony-api -p 4774:80 -e EXEC_UNAME="www-data" -e EXEC_UID=1000 -e EXEC_GID=1000 -v /repos/api:/usr/share/nginx/api --link harmony-mysql:mysql harmony/api:dev-local
+docker exec harmony-api /usr/share/nginx/api/artisan migrate
