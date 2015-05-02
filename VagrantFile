@@ -6,8 +6,15 @@ VAGRANTFILE_API_VERSION = "2"
 
 Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
 
-	config.vm.synced_folder ".", "/repos/vagrant", :disabled => false
-	config.vm.synced_folder "../harmony-api/", "/repos/api", :disabled => false
+	config.vm.synced_folder ".", "/repos/vagrant",
+		:disabled => false,
+		:type => "rsync",
+		:rsync__exclude => ".git/"
+
+	config.vm.synced_folder "../harmony-api/", "/repos/api",
+		:disabled => false,
+		:type => "rsync",
+		:rsync__exclude => ".git/"
 
 	config.vbguest.auto_update = true
 	config.vbguest.no_remote = false
@@ -20,7 +27,7 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
 		vm_name = "machine0"
         machine0.vm.host_name = vm_name
 
-		machine0.vm.hostname = "machine0.harmony.local"
+		machine0.vm.hostname = "machine0.harmony.dev"
 
 		machine0.vm.network :forwarded_port, guest: 22, host: 2201, id: 'ssh', auto_correct: true
 
@@ -37,8 +44,8 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
 			v.customize ["modifyvm", :id, "--cpus", 2]
 			v.customize ["modifyvm", :id, "--memory", 2048]
 
-			## Enable promisc on the two bridged networks
-			##     Re: https://github.com/jpetazzo/pipework#notes
+			# Enable promisc on the two bridged networks
+			#     Re: https://github.com/jpetazzo/pipework#notes
 			v.customize ['modifyvm', :id, '--nicpromisc2', 'allow-all']
 			v.customize ['modifyvm', :id, '--nicpromisc3', 'allow-all']
 		end
