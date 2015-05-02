@@ -49,6 +49,6 @@ docker run -d --name harmony-mysql -e MYSQL_DATABASE=harmony -e MYSQL_ROOT_PASSW
 # API
 #
 cd /repos/api
-docker build -t harmony/api:dev-local .
-docker run -d --name harmony-api -p 4774:80 -e EXEC_UNAME="www-data" -e EXEC_UID=1000 -e EXEC_GID=1000 -v /repos/api:/usr/share/nginx/api --link harmony-mysql:mysql harmony/api:dev-local
-docker exec harmony-api /usr/share/nginx/api/artisan migrate
+docker build -t harmony/api:dev .
+docker run -d --name harmony-api -p 4774:80 -e EXEC_UNAME="www-data" -e EXEC_UID=1000 -e EXEC_GID=1000 -v /repos/api:/usr/share/nginx/api --link harmony-mysql:mysql harmony/api:dev
+docker exec harmony-api /usr/share/nginx/api/artisan migrate --seed
