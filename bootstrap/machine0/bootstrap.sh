@@ -50,5 +50,18 @@ docker run -d --name harmony-mysql -e MYSQL_DATABASE=harmony -e MYSQL_ROOT_PASSW
 #
 cd /repos/api
 docker build -t harmony/api:dev .
-docker run -d --name harmony-api -p 4774:80 -e EXEC_UNAME="www-data" -e EXEC_UID=1000 -e EXEC_GID=1000 -v /repos/api:/usr/share/nginx/api --link harmony-mysql:mysql harmony/api:dev
+docker run -d --name harmony-api -p 4774:80 --expose 4774 -e EXEC_UNAME="www-data" -e EXEC_UID=1000 -e EXEC_GID=1000 -e MAESTRO_URL=`docker inspect --format '{{ .NetworkSettings.Gateway }}:4775' harmony-mysql` -v /repos/api:/usr/share/nginx/api --link harmony-mysql:mysql harmony/api:dev
 docker exec harmony-api /usr/share/nginx/api/artisan migrate --seed
+
+cd /repos/maestro
+docker build -t harmony/maestro:dev .
+# docker run -it --rm --expose 4775 -p 4775:4775 --name harmony-maestro -v /repos/go:/gocode --link harmony-api:harmony harmony/maestro:dev bash
+# echo "192.168.194.10 harmony.dev" >> /etc/hosts
+# go build -o maestro && ./maestro -logLevel=debug
+
+cd /repos/batond
+docker build -t harmony/batond:dev .
+# docker run -it --rm --name harmony-batond -v /repos/go:/gocode -v /var/run/docker.sock:/tmp/docker.sock -e HARMONY_MACHINE_NAME=epicpower -e HARMONY_API="http://192.168.194.10:4774" harmony/batond:dev bash
+# echo "192.168.194.10 harmony.dev" >> /etc/hosts
+# cd /gocode/src/github.com/dronemill/harmony-batond && go build -o batond && ./batond -machine.name $HARMONY_MACHINE_NAME -logLevel=debug
+

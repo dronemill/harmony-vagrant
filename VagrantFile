@@ -6,18 +6,27 @@ VAGRANTFILE_API_VERSION = "2"
 
 Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
 
-	config.vm.synced_folder ".", "/repos/vagrant",
-		:disabled => false,
-		:type => "rsync",
-		:rsync__exclude => ".git/"
-
-	config.vm.synced_folder "../harmony-api/", "/repos/api",
-		:disabled => false,
-		:type => "rsync",
-		:rsync__exclude => ".git/"
+	config.vm.synced_folder ".", "/repos/vagrant", :disabled => false
+	config.vm.synced_folder "../harmony-api/", "/repos/api", :disabled => false
+	config.vm.synced_folder "../harmony-baton/", "/repos/baton", :disabled => false
+	config.vm.synced_folder "../harmony-batond/", "/repos/batond", :disabled => false
+	config.vm.synced_folder "../harmony-maestro/", "/repos/maestro", :disabled => false
+	config.vm.synced_folder "../../go/", "/repos/go", :disabled => false
 
 	config.vbguest.auto_update = true
 	config.vbguest.no_remote = false
+
+	# Configure the window for gatling to coalesce writes.
+	if Vagrant.has_plugin?("vagrant-gatling-rsync")
+		config.gatling.latency = 2.5
+		config.gatling.time_format = "%H:%M:%S"
+	end
+
+	######
+	## Networking
+	##   192.168.194/24 LAN
+	##   192.168.195/24 WAN
+	######
 
 	config.vm.define "machine0" do |machine0|
 		machine0.vm.box = "ubuntu-14.04"
@@ -30,12 +39,6 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
 		machine0.vm.hostname = "machine0.harmony.dev"
 
 		machine0.vm.network :forwarded_port, guest: 22, host: 2201, id: 'ssh', auto_correct: true
-
-		######
-		## Networking
-		##   192.168.194/24 LAN
-		##   192.168.195/24 WAN
-		######
 		machine0.vm.network 'private_network', ip: "192.168.194.10", auto_config: false
 		machine0.vm.network 'private_network', ip: "192.168.195.10", auto_config: false
 
@@ -51,5 +54,32 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
 		end
 
 		machine0.vm.provision :shell, :path => "bootstrap/machine0/bootstrap.sh"
+	end
+
+	config.vm.define "machine1" do |machine1|
+		machine1.vm.box = "ubuntu-14.04"
+		machine1.vm.box_url = "https://oss-binaries.phusionpassenger.com/vagrant/boxes/latest/ubuntu-14.04-amd64-vbox.box"
+
+		vm_name = "machine1"
+		machine1.vm.host_name = vm_name
+
+		machine1.vm.hostname = "machine1.harmony.dev"
+
+		machine1.vm.network :forwarded_port, guest: 22, host: 2201, id: 'ssh', auto_correct: true
+		machine1.vm.network 'private_network', ip: "192.168.194.11", auto_config: false
+		machine1.vm.network 'private_network', ip: "192.168.195.11", auto_config: false
+
+		machine1.vm.provider "virtualbox" do |v|
+			v.name = vm_name
+			v.customize ["modifyvm", :id, "--cpus", 1]
+			v.customize ["modifyvm", :id, "--memory", 512]
+
+			# Enable promisc on the two bridged networks
+			#     Re: https://github.com/jpetazzo/pipework#notes
+			v.customize ['modifyvm', :id, '--nicpromisc2', 'allow-all']
+			v.customize ['modifyvm', :id, '--nicpromisc3', 'allow-all']
+		end
+
+		machine1.vm.provision :shell, :path => "bootstrap/machine1/bootstrap.sh"
 	end
 end
